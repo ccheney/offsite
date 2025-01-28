@@ -7,12 +7,15 @@ export default function Home() {
   const [transcript, setTranscript] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setIsLoading(true)
+    setImageUrl('')
 
     try {
+      // Get analysis
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -21,6 +24,18 @@ export default function Home() {
 
       const data = await response.json()
       setResult(data.result)
+
+      // Generate image from analysis
+      const imageResponse = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ analysis: data.result })
+      })
+
+      const imageData = await imageResponse.json()
+      if (imageData.imageUrl) {
+        setImageUrl(imageData.imageUrl)
+      }
     } catch (error) {
       console.error('Error:', error)
     } finally {
@@ -68,10 +83,18 @@ export default function Home() {
 
           {result && (
             <div className={styles.result}>
-              <h2 className={styles.resultTitle}>
-                Analysis Result
-              </h2>
+              <h2 className={styles.resultTitle}>Analysis Result</h2>
               <p className={styles.resultText}>{result}</p>
+              {imageUrl && (
+                <div className={styles.imageContainer}>
+                  <h3 className={styles.imageTitle}>Visual Summary</h3>
+                  <img
+                    src={imageUrl}
+                    alt="Analysis visualization"
+                    className={styles.resultImage}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
